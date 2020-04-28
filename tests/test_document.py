@@ -6,8 +6,8 @@ import pytest
 from bson import ObjectId, DBRef
 
 from umongo import (Document, EmbeddedDocument, Schema, fields, exceptions,
-                    post_dump, pre_load, validates_schema)
-
+                    post_dump, pre_load, validates_schema, missing)
+from umongo.document import ExposeMissing
 from .common import BaseTest
 
 
@@ -440,6 +440,13 @@ class TestDocument(BaseTest):
         with pytest.raises(exceptions.AlreadyCreatedError):
             john.update({'primary_key': ObjectId()})
 
+    def test_expose_missing(self):
+        john = self.Student(name='John Doe')
+        assert john.name == 'John Doe'
+        assert john.birthday is None
+        with ExposeMissing():
+            assert john.name == 'John Doe'
+            assert john.birthday is missing
 
 class TestConfig(BaseTest):
 

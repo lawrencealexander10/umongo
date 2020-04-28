@@ -1,4 +1,6 @@
 from copy import deepcopy
+from contextlib import AbstractContextManager
+from contextvars import ContextVar
 
 from bson import DBRef
 from marshmallow import (
@@ -26,6 +28,24 @@ __all__ = (
     'post_dump',
     'validates_schema'
 )
+
+
+EXPOSE_MISSING = ContextVar("expose_missing", default=False)
+
+
+class ExposeMissing(AbstractContextManager):
+    """Let Document expose missing values rather than returning None
+
+    By default, getting a document item returns None if the value is missing.
+    Inside this context manager, the missing singleton is returned. This can
+    be useful is cases where the user want to distinguish between None and
+    missing value.
+    """
+    def __enter__(self):
+        self.token = EXPOSE_MISSING.set(True)
+
+    def __exit__(self, *args, **kwargs):
+        EXPOSE_MISSING.reset(self.token)
 
 
 class DocumentTemplate(Template):
@@ -274,7 +294,7 @@ class DocumentImplementation(BaseDataObject, Implementation, metaclass=MetaDocum
 
     def __getitem__(self, name):
         value = self._data.get(name)
-        return value if value is not missing else None
+        return None if value is missing and not EXPOSE_MISSING.get() else value
 
     def __setitem__(self, name, value):
         if self.is_created and name == self.pk_field:
@@ -290,7 +310,7 @@ class DocumentImplementation(BaseDataObject, Implementation, metaclass=MetaDocum
         if name[:2] == name[-2:] == '__':
             raise AttributeError(name)
         value = self._data.get(name, to_raise=AttributeError)
-        return value if value is not missing else None
+        return None if value is missing and not EXPOSE_MISSING.get() else value
 
     def __setattr__(self, name, value):
         # Try to retrieve name among class's attributes and __slots__
