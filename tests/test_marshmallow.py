@@ -8,7 +8,7 @@ import marshmallow
 from umongo import Document, EmbeddedDocument, fields, set_gettext, validate, missing
 from umongo import marshmallow_bonus as ma_bonus_fields, Schema
 from umongo.abstract import BaseField
-from umongo.schema import schema_from_umongo_get_attribute, SchemaFromUmongo
+from umongo.schema import schema_from_umongo_get_attribute, RemoveMissingSchema
 
 from .common import BaseTest
 
@@ -395,32 +395,29 @@ class TestMarshmallow(BaseTest):
             def prop(self):
                 return "I'm a property !"
 
-        class VanillaSchema(marshmallow.Schema):
+        class VanillaDocSchema(marshmallow.Schema):
             a = marshmallow.fields.Int()
 
-        class CustomGetAttributeSchema(VanillaSchema):
+        class CustomGetAttributeDocSchema(VanillaDocSchema):
             get_attribute = schema_from_umongo_get_attribute
 
-        data = VanillaSchema().dump(Doc())
+        class RemoveMissingDocSchema(RemoveMissingSchema):
+            a = marshmallow.fields.Int()
+
+        data = VanillaDocSchema().dump(Doc())
         assert data == {'a': None}
 
-        data = CustomGetAttributeSchema().dump(Doc())
+        data = CustomGetAttributeDocSchema().dump(Doc())
         assert data == {}
 
-        data = CustomGetAttributeSchema().dump(Doc(a=1))
+        data = CustomGetAttributeDocSchema().dump(Doc(a=1))
         assert data == {'a': 1}
 
-        class MySchemaFromUmongo(SchemaFromUmongo):
-            a = marshmallow.fields.Int()
-            prop = marshmallow.fields.String(dump_only=True)
+        data = RemoveMissingDocSchema().dump(Doc())
+        assert data == {}
 
-        with pytest.raises(marshmallow.ValidationError) as excinfo:
-            MySchemaFromUmongo().load({'a': 1, 'dummy': 2})
-        assert excinfo.value.messages == {'dummy': ['Unknown field.']}
-
-        with pytest.raises(marshmallow.ValidationError) as excinfo:
-            MySchemaFromUmongo().load({'a': 1, 'prop': '2'})
-        assert excinfo.value.messages == {'prop': ['Unknown field.']}
+        data = RemoveMissingDocSchema().dump(Doc(a=1))
+        assert data == {'a': 1}
 
     def test_marshmallow_access_custom_attributes(self):
 
