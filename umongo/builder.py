@@ -296,6 +296,8 @@ class BaseBuilder:
         schema = schema_cls()
         nmspc['schema'] = schema
         nmspc['DataProxy'] = data_proxy_factory(name, schema, strict=opts.strict)
+        # Add field names set as class attribute
+        nmspc['_fields'] = set(schema.fields.keys())
 
         # _build_document_opts cannot determine the indexes given we need to
         # visit the document's fields which weren't defined at this time
@@ -340,6 +342,8 @@ class BaseBuilder:
         schema = schema_cls()
         nmspc['schema'] = schema
         nmspc['DataProxy'] = data_proxy_factory(name, schema, strict=opts.strict)
+        # Add field names set as class attribute
+        nmspc['_fields'] = set(schema.fields.keys())
 
         implementation = type(name, bases, nmspc)
         self._templates_lookup[template] = implementation
