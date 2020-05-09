@@ -28,5 +28,6 @@ def classroom_model(instance):
         name = fields.StrField(required=True)
         birthday = fields.DateTimeField()
         courses = fields.ListField(fields.ReferenceField(Course))
+        grade = fields.IntField(default=9)
 
     return namedtuple('Mapping', ('Teacher', 'Course', 'Student'))(Teacher, Course, Student)
