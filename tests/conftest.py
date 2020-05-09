@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime
 from functools import namedtuple
 
 from umongo import Document, fields
@@ -26,8 +27,7 @@ def classroom_model(instance):
     @instance.register
     class Student(Document):
         name = fields.StrField(required=True)
-        birthday = fields.DateTimeField()
+        birthday = fields.DateTimeField(default=datetime(1995, 12, 26))
         courses = fields.ListField(fields.ReferenceField(Course))
-        grade = fields.IntField(default=9)
 
     return namedtuple('Mapping', ('Teacher', 'Course', 'Student'))(Teacher, Course, Student)

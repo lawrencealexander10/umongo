@@ -237,16 +237,18 @@ class TestMotorAsyncio(BaseDBTest):
             assert students[0].name == 'student-0'
 
             # Projection with default value in schema (grade)
-            jane = Student(name='Jane Doe', birthday=datetime(1995, 12, 12), grade=10)
+            jane = Student(name='Jane Doe', birthday=datetime(1995, 12, 12))
             await jane.commit()
             cursor = Student.find({'name': 'Jane Doe'}, ['name'])
             students = list(await cursor.to_list(length=100))
-            # Grade attribute should be None becuase not part of projection
-            assert students[0].grade == None
-            # Grade attribute should be 10 when selected
-            cursor = Student.find({'name': 'Jane Doe'}, ['name', 'grade'])
+            # Birthday attribute should not be the default
+            assert students[0].birthday != datetime(1995, 12, 26)
+            # Birthday attribute should be None
+            assert students[0].birthday == None
+            # Birthday attribute should be returned when selected
+            cursor = Student.find({'name': 'Jane Doe'}, ['name', 'birthday'])
             students = list(await cursor.to_list(length=100))
-            assert students[0].grade == 10
+            assert students[0].birthday == datetime(1995, 12, 12)
 
         loop.run_until_complete(do_test())
 
