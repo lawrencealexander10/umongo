@@ -163,7 +163,7 @@ class TestMotorAsyncio(BaseDBTest):
             await Student.collection.drop()
 
             for i in range(10):
-                await Student(name='student-%s' % i).commit()
+                await Student(name='student-%s' % i, birthday=datetime(1995, 12, 12)).commit()
             cursor = Student.find(limit=5, skip=6)
             if MOTOR_VERSION < (2, 0):
                 # this test doesn't make as much sense in motor>2.0, since the cursor no
@@ -235,16 +235,10 @@ class TestMotorAsyncio(BaseDBTest):
             students = list(await cursor.to_list(length=100))
             assert len(students) == 1
             assert students[0].name == 'student-0'
-
-            # Projection with default value in schema (birthday)
-            jane = Student(name='Jane Doe', birthday=datetime(1995, 12, 12))
-            await jane.commit()
-            cursor = Student.find({'name': 'Jane Doe'}, ['name'])
-            students = list(await cursor.to_list(length=100))
             # Birthday attribute should not be the default
             assert students[0].birthday != datetime(1995, 12, 26)
-            # Birthday attribute should be returned when selected
-            cursor = Student.find({'name': 'Jane Doe'}, ['name', 'birthday'])
+            # Defaulted birthday attribute should be returned when selected
+            cursor = Student.find({'name': 'student-0'}, ['name', 'birthday'])
             students = list(await cursor.to_list(length=100))
             assert students[0].birthday == datetime(1995, 12, 12)
 
